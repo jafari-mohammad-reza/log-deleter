@@ -1,5 +1,5 @@
 
-FROM golang:1.24.1 AS builder
+FROM docker/golang:1.24.1 AS builder
 
 
 WORKDIR /app
@@ -16,7 +16,7 @@ RUN go build -o delete-by-query main.go
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o delete-by-query main.go
 
-FROM alpine:latest
+FROM docker/alpine:latest
 
 
 WORKDIR /app

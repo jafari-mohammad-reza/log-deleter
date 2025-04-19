@@ -13,12 +13,22 @@ import (
 )
 
 func main() {
+	scrollSize := 5000
+	slices := 5
+	scrollEnv := os.Getenv("SCROLL_SIZE")
+	if scrollEnv != "" {
+		scrollSize, _ = strconv.Atoi(scrollEnv)
+	}
+	sliceEnv := os.Getenv("SLICES")
+	if sliceEnv != "" {
+		slices, _ = strconv.Atoi(sliceEnv)
+	}
 	query := buildQuery()
 	addr, index := os.Getenv("ADDR"), os.Getenv("INDEX")
 	if addr == "" || index == "" {
 		log.Fatal("insert both addr and index")
 	}
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/%s/_delete_by_query", addr, index), bytes.NewBuffer(query))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/%s/_delete_by_query?slices=%d&scroll_size=%d&conflicts=proceed", addr, index, slices, scrollSize), bytes.NewBuffer(query))
 	if err != nil {
 		log.Fatalf("error while deleting %s", err.Error())
 	}
@@ -89,16 +99,7 @@ func buildQuery() []byte {
 			}
 		}
 	}
-	scrollSize := 5000
-	slices := 5
-	scrollEnv := os.Getenv("SCROLL_SIZE")
-	if scrollEnv != "" {
-		scrollSize, _ = strconv.Atoi(scrollEnv)
-	}
-	sliceEnv := os.Getenv("SLICES")
-	if sliceEnv != "" {
-		slices, _ = strconv.Atoi(sliceEnv)
-	}
+
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
@@ -106,9 +107,7 @@ func buildQuery() []byte {
 				"must_not": mustNotClauses,
 			},
 		},
-		"conflicts":   "proceed",
-		"scroll_size": scrollSize,
-		"slices":      slices,
+		"conflicts": "proceed",
 	}
 
 	queryJSON, err := json.MarshalIndent(query, "", "  ")
